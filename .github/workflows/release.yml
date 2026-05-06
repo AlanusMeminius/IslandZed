@@ -1,0 +1,155 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: '1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bundle_mac_aarch64:
+    runs-on: macos-15
+    env:
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout zed-custom (with submodule)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply patches to zed submodule
+        working-directory: source
+        run: |
+          shopt -s nullglob
+          for p in ../patches/*.patch; do
+            echo "Applying $p"
+            git apply --3way "$p"
+          done
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bundle Zed (aarch64-apple-darwin)
+        working-directory: source
+        run: ./script/bundle-mac aarch64-apple-darwin
+
+      - name: Upload Zed-aarch64.dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zed-aarch64.dmg
+          path: source/target/aarch64-apple-darwin/release/Zed-aarch64.dmg
+          if-no-files-found: error
+
+      - name: Upload zed-remote-server-macos-aarch64.gz
+        uses: actions/upload-artifact@v4
+        with:
+          name: zed-remote-server-macos-aarch64.gz
+          path: source/target/zed-remote-server-macos-aarch64.gz
+          if-no-files-found: error
+    timeout-minutes: 240
+
+  bundle_windows_x86_64:
+    runs-on: windows-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+    steps:
+      - name: Configure git (autocrlf + longpaths)
+        shell: pwsh
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+          git config --global core.longpaths true
+
+      - name: Checkout zed-custom (with submodule)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply patches to zed submodule
+        working-directory: source
+        shell: pwsh
+        run: |
+          git -c core.autocrlf=false reset --hard HEAD
+          Get-ChildItem ../patches/*.patch | ForEach-Object {
+            Write-Host "Applying $($_.FullName)"
+            git apply --3way $_.FullName
+            if ($LASTEXITCODE -ne 0) { throw "Failed to apply $($_.Name)" }
+          }
+
+      - name: Bundle Zed (x86_64)
+        working-directory: source
+        shell: pwsh
+        env:
+          CI: ''
+          ZED_WORKSPACE: ${{ github.workspace }}/source
+        run: ./script/bundle-windows.ps1 -Architecture x86_64
+
+      - name: Upload Zed-x86_64.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zed-x86_64.exe
+          path: source/target/Zed-x86_64.exe
+          if-no-files-found: error
+
+      - name: Upload zed-remote-server-windows-x86_64.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: zed-remote-server-windows-x86_64.zip
+          path: source/target/zed-remote-server-windows-x86_64.zip
+          if-no-files-found: error
+    timeout-minutes: 240
+
+  notify:
+    needs:
+      - bundle_mac_aarch64
+      - bundle_windows_x86_64
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Bark notification
+        continue-on-error: true
+        env:
+          BARK_KEY: ${{ secrets.BARK_KEY }}
+          MAC_RESULT: ${{ needs.bundle_mac_aarch64.result }}
+          WIN_RESULT: ${{ needs.bundle_windows_x86_64.result }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [[ -z "$BARK_KEY" ]]; then
+            echo "BARK_KEY is empty, skipping notification."
+            exit 0
+          fi
+
+          if [[ "$MAC_RESULT" == "success" && "$WIN_RESULT" == "success" ]]; then
+            title="Zed build succeeded"
+          elif [[ "$MAC_RESULT" == "cancelled" || "$WIN_RESULT" == "cancelled" ]] \
+            && [[ "$MAC_RESULT" != "failure" && "$WIN_RESULT" != "failure" ]]; then
+            title="Zed build cancelled"
+          else
+            title="Zed build failed"
+          fi
+
+          run_url="https://github.com/${REPO}/actions/runs/${RUN_ID}"
+          body="${REF} | mac: ${MAC_RESULT} | windows: ${WIN_RESULT}"
+
+          payload=$(jq -nc \
+            --arg title "$title" \
+            --arg body  "$body" \
+            --arg url   "$run_url" \
+            '{title:$title, body:$body, group:"Zed Build", url:$url}')
+
+          curl -fsS -X POST "https://api.day.app/${BARK_KEY}" \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            -d "$payload"

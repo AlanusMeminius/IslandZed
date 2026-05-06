@@ -1,0 +1,61 @@
+diff --git a/crates/editor/src/element.rs b/crates/editor/src/element.rs
+index 2da7dbd5d3..9ebf32b8f0 100644
+--- a/crates/editor/src/element.rs
++++ b/crates/editor/src/element.rs
+@@ -7002,25 +7002,25 @@ impl EditorElement {
+                             }
+                             ScrollbarThumbState::Hovered => {
+                                 cx.theme().colors().scrollbar_thumb_hover_background
+                             }
+                             ScrollbarThumbState::Idle => {
+                                 cx.theme().colors().scrollbar_thumb_background
+                             }
+                         };
+                         window.paint_quad(quad(
+                             thumb_bounds,
+-                            Corners::default(),
++                            Corners::all(Pixels::MAX).clamp_radii_for_quad_size(thumb_bounds.size),
+                             scrollbar_thumb_color,
+-                            scrollbar_edges,
+-                            cx.theme().colors().scrollbar_thumb_border,
+-                            BorderStyle::Solid,
++                            Edges::default(),
++                            Hsla::transparent_black(),
++                            BorderStyle::default(),
+                         ));
+ 
+                         if any_scrollbar_dragged {
+                             window.set_window_cursor_style(CursorStyle::Arrow);
+                         } else {
+                             window.set_cursor_style(CursorStyle::Arrow, hitbox);
+                         }
+                     }
+                 })
+             }
+diff --git a/crates/ui/src/components/scrollbar.rs b/crates/ui/src/components/scrollbar.rs
+index 4a30f60176..ef7a38d2ef 100644
+--- a/crates/ui/src/components/scrollbar.rs
++++ b/crates/ui/src/components/scrollbar.rs
+@@ -352,21 +352,21 @@ enum Handle<T: ScrollableHandle> {
+ pub enum ScrollbarStyle {
+     #[default]
+     Regular,
+     Editor,
+ }
+ 
+ impl ScrollbarStyle {
+     pub const fn to_pixels(&self) -> Pixels {
+         match self {
+             ScrollbarStyle::Regular => px(6.),
+-            ScrollbarStyle::Editor => px(15.),
++            ScrollbarStyle::Editor => px(6.),
+         }
+     }
+ }
+ 
+ #[derive(Clone)]
+ pub struct Scrollbars<T: ScrollableHandle = ScrollHandle> {
+     id: Option<ElementId>,
+     get_visibility: fn(&App) -> ShowScrollbar,
+     tracked_entity: Option<Option<EntityId>>,
+     scrollable_handle: Handle<T>,

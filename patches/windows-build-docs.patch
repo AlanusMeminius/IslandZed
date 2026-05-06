@@ -1,0 +1,35 @@
+diff --git a/.rules b/.rules
+index 4b4eb08c36..88a4678f0a 100644
+--- a/.rules
++++ b/.rules
+@@ -128,20 +128,30 @@ When a view's state has changed in a way that may affect its rendering, it shoul
+ ## Entity events
+ 
+ While updating an entity (`cx: Context<T>`), it can emit an event using `cx.emit(event)`. Entities register which events they can emit by declaring `impl EventEmitter<EventType> for EntityType {}`.
+ 
+ Other entities can then register a callback to handle these events by doing `cx.subscribe(other_entity, |this, other_entity, event, cx| ...)`. This will return a `Subscription` which deregisters the callback when dropped.  Typically `cx.subscribe` happens when creating a new entity and the subscriptions are stored in a `_subscriptions: Vec<Subscription>` field.
+ 
+ ## Build guidelines
+ 
+ - Use `./script/clippy` instead of `cargo clippy`
+ 
++# Windows builds
++
++Environmental traps hit on first-time Windows setup that are not covered by `docs/src/development/windows.md`:
++
++* **MSVC `cl` < 14.50 (VS 2022 < 17.13) fails to link** with `LNK2019: unresolved external symbol __std_search_1` (and `__std_find_first_of_trivial_pos_1`, `__std_find_end_1`, `__std_remove_8`). The `livekit-rust-sdks` prebuilt `libwebrtc.lib` references STL vectorized intrinsics that the older static CRT does not contain, and `.cargo/config.toml` enforces `+crt-static` so dlls cannot rescue. Use a VS 2022 17.13+ or VS 18 toolchain (`vcvars64.bat`).
++* **Spectre-mitigated libs are installed per-MSVC-toolchain.** The `msvc_spectre_libs` crate has its `error` feature enabled in Zed's dependency graph, so its `build.rs` panics with `No spectre-mitigated libs were found` when `<cl>\..\..\..\..\lib\spectre\<arch>\` does not exist. After switching toolchains, install the Spectre libs component for the new toolchain via Visual Studio Installer.
++* **`webrtc-sys/build.rs` calls `fs::remove_dir_all(&webrtc_dir)` before each download attempt.** A failed download (e.g., transient TLS handshake failure on `release-assets.githubusercontent.com`) wipes the cache, and any change to compiler version invalidates cargo's fingerprint and triggers a redownload. Pre-download `webrtc-<TAG>-<N>/webrtc-win-x64-release.zip` once, extract it to a stable location outside `target/`, and set `LK_CUSTOM_WEBRTC` to the extracted `win-x64-release/` directory (the one containing `include/`, `lib/`, `webrtc.ninja`). The build script honors this and skips the download.
++* **`[profile.release]` causes rustc OOM on machines with <64 GB combined RAM + pagefile.** The `lto = "thin"` + `codegen-units = 1` combination drives per-process peak memory to 3–6 GB during monomorphization; cargo's default `-j` (logical core count) runs many in parallel. Use `cargo build --profile release-fast` for local builds — the profile is defined in the workspace `Cargo.toml` for exactly this case (`lto = false`, `codegen-units = 16`) and produces `target/release-fast/zed.exe`. Falling back to `--release -j 6` is the alternative when a fully LTO-optimized binary is required.
++* **`vcvars64.bat` prints `'vswhere.exe' is not recognized as an internal or external command'`** before completing successfully. Benign — verify the toolchain by checking `where cl` and the `errorlevel`, not by scanning for that warning.
++
+ # Pull request hygiene
+ 
+ When an agent opens or updates a pull request, it must:
+ 
+ - Use a clear, correctly capitalized, imperative PR title (for example, `Fix crash in project panel`).
+ - Avoid conventional commit prefixes in PR titles (`fix:`, `feat:`, `docs:`, etc.).
+ - Avoid trailing punctuation in PR titles.
+ - Optionally prefix the title with a crate name when one crate is the clear scope (for example, `git_ui: Add history view`).
+ - Include a `Release Notes:` section as the final section in the PR body.
+ - Use one bullet under `Release Notes:`:

@@ -1,0 +1,79 @@
+diff --git a/crates/title_bar/src/title_bar.rs b/crates/title_bar/src/title_bar.rs
+index 988c8a7c6f..9d385342bb 100644
+--- a/crates/title_bar/src/title_bar.rs
++++ b/crates/title_bar/src/title_bar.rs
+@@ -46,7 +46,7 @@ use theme::ActiveTheme;
+ use title_bar_settings::TitleBarSettings;
+ use ui::{
+     Avatar, ButtonLike, ContextMenu, ContextMenuEntry, IconWithIndicator, Indicator, PopoverMenu,
+-    PopoverMenuHandle, TintColor, Tooltip, prelude::*, utils::platform_title_bar_height,
++    PopoverMenuHandle, TintColor, Tooltip, prelude::*,
+ };
+ use update_version::UpdateVersion;
+ use util::ResultExt;
+@@ -215,6 +215,11 @@ impl Render for TitleBar {
+             h_flex()
+                 .h_full()
+                 .gap_0p5()
++                // When the OS menu bar is rendered separately (`show_menus`
++                // true), we still want the project / git controls to sit a
++                // step away from where the menu ends so the title bar reads
++                // as two distinct groups instead of one cramped row.
++                .when(show_menus, |this| this.pl_3())
+                 .map(|title_bar| {
+                     let mut render_project_items = title_bar_settings.show_branch_name
+                         || title_bar_settings.show_project_items;
+@@ -317,41 +322,19 @@ impl Render for TitleBar {
+                 .into_any_element(),
+         );
+ 
+-        if show_menus {
+-            self.platform_titlebar.update(cx, |this, _| {
+-                this.set_button_layout(button_layout);
+-                this.set_children(
+-                    self.application_menu
+-                        .clone()
+-                        .map(|menu| menu.into_any_element()),
+-                );
+-            });
+-
+-            let height = platform_title_bar_height(window);
+-            let title_bar_color = self.platform_titlebar.update(cx, |platform_titlebar, cx| {
+-                platform_titlebar.title_bar_color(window, cx)
+-            });
+-
+-            v_flex()
+-                .w_full()
+-                .child(self.platform_titlebar.clone().into_any_element())
+-                .child(
+-                    h_flex()
+-                        .bg(title_bar_color)
+-                        .h(height)
+-                        .pl_2()
+-                        .justify_between()
+-                        .w_full()
+-                        .children(children),
+-                )
+-                .into_any_element()
+-        } else {
+-            self.platform_titlebar.update(cx, |this, _| {
+-                this.set_button_layout(button_layout);
+-                this.set_children(children);
+-            });
+-            self.platform_titlebar.clone().into_any_element()
++        let mut all_children: Vec<AnyElement> = Vec::with_capacity(children.len() + 1);
++        if show_menus
++            && let Some(menu) = self.application_menu.clone()
++        {
++            all_children.push(menu.into_any_element());
+         }
++        all_children.extend(children);
++
++        self.platform_titlebar.update(cx, |this, _| {
++            this.set_button_layout(button_layout);
++            this.set_children(all_children);
++        });
++        self.platform_titlebar.clone().into_any_element()
+     }
+ }
+ 

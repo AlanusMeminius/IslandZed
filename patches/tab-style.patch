@@ -1,0 +1,69 @@
+diff --git a/crates/ui/src/components/tab.rs b/crates/ui/src/components/tab.rs
+index e6823f46b7..98e076c64b 100644
+--- a/crates/ui/src/components/tab.rs
++++ b/crates/ui/src/components/tab.rs
+@@ -142,29 +142,48 @@ impl RenderOnce for Tab {
+         };
+ 
+         self.div
++            .relative()
+             .h(Tab::container_height(cx))
+-            .bg(tab_bg)
++            .when(!self.selected, |this| this.bg(tab_bg))
+             .border_color(cx.theme().colors().border)
+             .map(|this| match self.position {
+                 TabPosition::First => {
+                     if self.selected {
+-                        this.pl_px().border_r_1().pb_px()
++                        this.pl_px()
+                     } else {
+                         this.pl_px().pr_px().border_b_1()
+                     }
+                 }
+                 TabPosition::Last => {
+                     if self.selected {
+-                        this.border_l_1().border_r_1().pb_px()
++                        this
+                     } else {
+                         this.pl_px().border_b_1().border_r_1()
+                     }
+                 }
+-                TabPosition::Middle(Ordering::Equal) => this.border_l_1().border_r_1().pb_px(),
++                TabPosition::Middle(Ordering::Equal) => this,
+                 TabPosition::Middle(Ordering::Less) => this.border_l_1().pr_px().border_b_1(),
+                 TabPosition::Middle(Ordering::Greater) => this.border_r_1().pl_px().border_b_1(),
+             })
+             .cursor_pointer()
++            .when(self.selected, |this| {
++                // Selected tabs are marked by an inset rounded outline rather
++                // than a filled surface. `border_selected` is the theme token
++                // for "this thing is the selected one"; the inset on all four
++                // sides keeps the outline from butting against the tab bar's
++                // edges so it reads as a floating pill.
++                this.child(
++                    div()
++                        .absolute()
++                        .top(px(4.))
++                        .bottom(px(4.))
++                        .left(px(2.))
++                        .right(px(2.))
++                        .rounded_md()
++                        .border_1()
++                        .border_color(cx.theme().colors().border_selected),
++                )
++            })
+             .child(
+                 h_flex()
+                     .group("")
+diff --git a/crates/ui/src/components/tab_bar.rs b/crates/ui/src/components/tab_bar.rs
+index 7ebbaab071..a5c007ca35 100644
+--- a/crates/ui/src/components/tab_bar.rs
++++ b/crates/ui/src/components/tab_bar.rs
+@@ -130,6 +130,7 @@ impl RenderOnce for TabBar {
+                         h_flex()
+                             .id("tabs")
+                             .flex_grow()
++                            .pl_2()
+                             .overflow_x_scroll()
+                             .when_some(self.scroll_handle, |cx, scroll_handle| {
+                                 cx.track_scroll(&scroll_handle)
