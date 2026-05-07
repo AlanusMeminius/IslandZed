@@ -27,6 +27,7 @@ EXPECTED_PATCHES=(
   windows-build-docs.patch
   windows-vs-devshell.patch
   project-panel-style.patch
+  set-github-light-solid-as-default-theme.patch
 )
 
 if [[ -t 1 ]]; then
