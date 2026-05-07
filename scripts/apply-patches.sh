@@ -5,6 +5,23 @@
 #   ./apply-patches.sh         apply all patches in declared order
 #   ./apply-patches.sh reset   hard-reset source/ to the submodule pin
 #                              and discard all local changes.
+#
+# The patch files in patches/ are *generated artifacts* of the
+# `islandzed/applied` branch maintained inside source/. To edit a patch:
+#
+#   1. cd source && git checkout islandzed/applied
+#   2. Edit code, commit / amend / rebase as usual
+#   3. ../scripts/regen-patches.sh   (refreshes patches/*.patch from the branch)
+#
+# To bump the submodule pin:
+#
+#   1. Update the submodule pin in the outer repo as usual
+#   2. cd source && git rebase <new-pin> islandzed/applied
+#   3. Resolve any conflicts (per-commit, with normal git merge tooling)
+#   4. ../scripts/regen-patches.sh
+#
+# After a fresh clone (or if the branch was deleted), bootstrap with:
+#   ./scripts/init-patches-branch.sh
 
 set -euo pipefail
 
