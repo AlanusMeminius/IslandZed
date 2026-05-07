@@ -31,7 +31,7 @@ jobs:
           shopt -s nullglob
           for p in ../patches/*.patch; do
             echo "Applying $p"
-            git apply --3way "$p"
+            git apply "$p"
           done
 
       - name: Setup Node
@@ -83,7 +83,7 @@ jobs:
           git -c core.autocrlf=false reset --hard HEAD
           Get-ChildItem ../patches/*.patch | ForEach-Object {
             Write-Host "Applying $($_.FullName)"
-            git apply --3way $_.FullName
+            git apply $_.FullName
             if ($LASTEXITCODE -ne 0) { throw "Failed to apply $($_.Name)" }
           }
 

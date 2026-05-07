@@ -2,14 +2,7 @@ diff --git a/.rules b/.rules
 index 4b4eb08c36..88a4678f0a 100644
 --- a/.rules
 +++ b/.rules
-@@ -128,20 +128,30 @@ When a view's state has changed in a way that may affect its rendering, it shoul
- ## Entity events
- 
- While updating an entity (`cx: Context<T>`), it can emit an event using `cx.emit(event)`. Entities register which events they can emit by declaring `impl EventEmitter<EventType> for EntityType {}`.
- 
- Other entities can then register a callback to handle these events by doing `cx.subscribe(other_entity, |this, other_entity, event, cx| ...)`. This will return a `Subscription` which deregisters the callback when dropped.  Typically `cx.subscribe` happens when creating a new entity and the subscriptions are stored in a `_subscriptions: Vec<Subscription>` field.
- 
- ## Build guidelines
+@@ -135,6 +135,16 @@ Other entities can then register a callback to handle these events by doing `cx.
  
  - Use `./script/clippy` instead of `cargo clippy`
  
@@ -26,10 +19,3 @@ index 4b4eb08c36..88a4678f0a 100644
  # Pull request hygiene
  
  When an agent opens or updates a pull request, it must:
- 
- - Use a clear, correctly capitalized, imperative PR title (for example, `Fix crash in project panel`).
- - Avoid conventional commit prefixes in PR titles (`fix:`, `feat:`, `docs:`, etc.).
- - Avoid trailing punctuation in PR titles.
- - Optionally prefix the title with a crate name when one crate is the clear scope (for example, `git_ui: Add history view`).
- - Include a `Release Notes:` section as the final section in the PR body.
- - Use one bullet under `Release Notes:`:

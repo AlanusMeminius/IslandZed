@@ -2,14 +2,7 @@ diff --git a/script/bundle-windows.ps1 b/script/bundle-windows.ps1
 index 53527e1b8f..acf5661875 100644
 --- a/script/bundle-windows.ps1
 +++ b/script/bundle-windows.ps1
-@@ -32,23 +32,52 @@ function Get-VSArch {
-     param(
-         [string]$Arch
-     )
- 
-     switch ($Arch) {
-         "x86_64" { "amd64" }
-         "aarch64" { "arm64" }
+@@ -39,9 +39,38 @@ function Get-VSArch {
      }
  }
  
@@ -50,10 +43,3 @@ index 53527e1b8f..acf5661875 100644
  
  $target = "$Architecture-pc-windows-msvc"
  
- if ($Help) {
-     Write-Output "Usage: test.ps1 [-Install] [-Help]"
-     Write-Output "Build the installer for Windows.\n"
-     Write-Output "Options:"
-     Write-Output "  -Architecture, -a Which architecture to build (x86_64 or aarch64)"
-     Write-Output "  -Install, -i      Run the installer after building."
-     Write-Output "  -Help, -h         Show this help message."

@@ -2,14 +2,7 @@ diff --git a/crates/workspace/src/dock.rs b/crates/workspace/src/dock.rs
 index 1983b2921f..cc0c699ce8 100644
 --- a/crates/workspace/src/dock.rs
 +++ b/crates/workspace/src/dock.rs
-@@ -1118,51 +1118,64 @@ impl Render for Dock {
-                             .absolute()
-                             .top(px(0.))
-                             .left(-RESIZE_HANDLE_SIZE / 2.)
-                             .h_full()
-                             .w(RESIZE_HANDLE_SIZE)
-                             .cursor_col_resize(),
-                     ),
+@@ -1125,37 +1125,50 @@ impl Render for Dock {
                  }
              };
  
@@ -77,48 +70,20 @@ index 1983b2921f..cc0c699ce8 100644
                          ),
                  )
                  .when(self.resizable(cx), |this| {
-                     this.child(create_resize_handle())
-                 })
-         } else {
-             div()
-                 .id("dock-panel")
-                 .key_context(dispatch_context)
-                 .track_focus(&self.focus_handle(cx))
 diff --git a/crates/workspace/src/workspace.rs b/crates/workspace/src/workspace.rs
-index 45a14fa1a0..3c51053961 100644
+index 9cc1fa3086..ceb2e0b91d 100644
 --- a/crates/workspace/src/workspace.rs
 +++ b/crates/workspace/src/workspace.rs
-@@ -57,21 +57,21 @@ use futures::{
-         oneshot,
-     },
-     future::{Shared, try_join_all},
- };
- use gpui::{
-     Action, AnyEntity, AnyView, AnyWeakView, App, AsyncApp, AsyncWindowContext, Axis, Bounds,
-     Context, CursorStyle, Decorations, DragMoveEvent, Entity, EntityId, EventEmitter, FocusHandle,
+@@ -64,7 +64,7 @@ use gpui::{
      Focusable, Global, HitboxBehavior, Hsla, KeyContext, Keystroke, ManagedView, MouseButton,
      PathPromptOptions, Point, PromptLevel, Render, ResizeEdge, Size, Stateful, Subscription,
-     SystemWindowTabController, Task, Tiling, WeakEntity, WindowBounds, WindowHandle, WindowId,
--    WindowOptions, actions, canvas, point, relative, size, transparent_black,
-+    WindowOptions, actions, canvas, point, px, relative, size, transparent_black,
+     SystemWindowTabController, Task, TaskExt, Tiling, WeakEntity, WindowBounds, WindowHandle,
+-    WindowId, WindowOptions, actions, canvas, point, relative, size, transparent_black,
++    WindowId, WindowOptions, actions, canvas, point, px, relative, size, transparent_black,
  };
  pub use history_manager::*;
  pub use item::{
-     FollowableItem, FollowableItemHandle, Item, ItemHandle, ItemSettings, PreviewTabsSettings,
-     ProjectItem, SerializableItem, SerializableItemHandle, WeakItemHandle,
- };
- use itertools::Itertools;
- use language::{Buffer, LanguageRegistry, Rope, language_settings::all_language_settings};
- pub use modal_layer::*;
- use node_runtime::NodeRuntime;
-@@ -7841,21 +7841,22 @@ impl Workspace {
-     ) {
-         match dock_pos {
-             DockPosition::Left => self.resize_left_dock(new_size, window, cx),
-             DockPosition::Right => self.resize_right_dock(new_size, window, cx),
-             DockPosition::Bottom => self.resize_bottom_dock(new_size, window, cx),
-         }
-     }
+@@ -7877,7 +7877,8 @@ impl Workspace {
  
      fn resize_left_dock(&mut self, new_size: Pixels, window: &mut Window, cx: &mut App) {
          let workspace_width = self.bounds.size.width;
@@ -128,21 +93,7 @@ index 45a14fa1a0..3c51053961 100644
  
          self.right_dock.read_with(cx, |right_dock, cx| {
              let right_dock_size = right_dock
-                 .stored_active_panel_size(window, cx)
-                 .unwrap_or(Pixels::ZERO);
-             if right_dock_size + size > workspace_width {
-                 size = workspace_width - right_dock_size
-             }
-         });
- 
-@@ -7867,21 +7868,22 @@ impl Workspace {
-             {
-                 left_dock.resize_all_panels(Some(size), flex_grow, window, cx);
-             } else {
-                 left_dock.resize_active_panel(Some(size), flex_grow, window, cx);
-             }
-         });
-     }
+@@ -7903,7 +7904,8 @@ impl Workspace {
  
      fn resize_right_dock(&mut self, new_size: Pixels, window: &mut Window, cx: &mut App) {
          let workspace_width = self.bounds.size.width;
@@ -152,21 +103,7 @@ index 45a14fa1a0..3c51053961 100644
          self.left_dock.read_with(cx, |left_dock, cx| {
              let left_dock_size = left_dock
                  .stored_active_panel_size(window, cx)
-                 .unwrap_or(Pixels::ZERO);
-             if left_dock_size + size > workspace_width {
-                 size = workspace_width - left_dock_size
-             }
-         });
-         let flex_grow = self.dock_flex_for_size(DockPosition::Right, size, window, cx);
-         self.right_dock.update(cx, |right_dock, cx| {
-@@ -8346,21 +8348,24 @@ impl Render for Workspace {
-         }
- 
-         let centered_layout = self.centered_layout
-             && self.center.panes().len() == 1
-             && self.active_item(cx).is_some();
-         let render_padding = |size| {
-             (size > 0.0).then(|| {
+@@ -8382,7 +8384,10 @@ impl Render for Workspace {
                  div()
                      .h_full()
                      .w(relative(size))
@@ -178,21 +115,7 @@ index 45a14fa1a0..3c51053961 100644
                      .border_color(cx.theme().colors().pane_group_border)
              })
          };
-         let paddings = if centered_layout {
-             let settings = WorkspaceSettings::get_global(cx).centered_layout;
-             (
-                 render_padding(Self::adjust_padding(
-                     settings.left_padding.map(|padding| padding.0),
-                 )),
-                 render_padding(Self::adjust_padding(
-@@ -8407,73 +8412,52 @@ impl Render for Workspace {
-                     cx.notify(id);
-                 }
-             })
-             .child(
-                 div()
-                     .size_full()
-                     .relative()
+@@ -8443,59 +8448,38 @@ impl Render for Workspace {
                      .flex_1()
                      .flex()
                      .flex_col()
@@ -274,21 +197,7 @@ index 45a14fa1a0..3c51053961 100644
                              .when(self.zoomed.is_none(), |this| {
                                  this.on_drag_move(cx.listener(
                                      move |workspace, e: &DragMoveEvent<DraggedDock>, window, cx| {
-                                         if workspace.previous_dock_drag_coordinates
-                                             != Some(e.event.position)
-                                         {
-                                             workspace.previous_dock_drag_coordinates =
-                                                 Some(e.event.position);
- 
-                                             match e.drag(cx).0 {
-@@ -8500,55 +8484,158 @@ impl Render for Workspace {
-                                                         window,
-                                                         cx,
-                                                     );
-                                                 }
-                                             };
-                                             workspace.serialize_workspace(window, cx);
-                                         }
+@@ -8536,16 +8520,115 @@ impl Render for Workspace {
                                      },
                                  ))
                              })
@@ -405,20 +314,7 @@ index 45a14fa1a0..3c51053961 100644
                                                  .flex_1()
                                                  .overflow_hidden()
                                                  .children(self.render_dock(
-                                                     DockPosition::Left,
-                                                     &self.left_dock,
-                                                     window,
-                                                     cx,
-                                                 ))
-                                                 .child(
-                                                     div()
-                                                         .flex()
-                                                         .flex_col()
-                                                         .flex_1()
-                                                         .overflow_hidden()
-                                                         .child(
-                                                             h_flex()
-                                                                 .flex_1()
+@@ -8566,11 +8649,15 @@ impl Render for Workspace {
                                                                  .when_some(paddings.0, |this, p| {
                                                                      this.child(p.border_r_1())
                                                                  })
@@ -439,21 +335,7 @@ index 45a14fa1a0..3c51053961 100644
                                                                  ))
                                                                  .when_some(
                                                                      paddings.1,
-                                                                     |this, p| {
-                                                                         this.child(p.border_l_1())
-                                                                     },
-                                                                 ),
-                                                         ),
-                                                 )
-                                                 .children(self.render_dock(
-@@ -8561,31 +8648,34 @@ impl Render for Workspace {
-                                         .child(div().w_full().children(self.render_dock(
-                                             DockPosition::Bottom,
-                                             &self.bottom_dock,
-                                             window,
-                                             cx,
-                                         ))),
- 
+@@ -8597,17 +8684,20 @@ impl Render for Workspace {
                                      BottomDockLayout::LeftAligned => div()
                                          .flex()
                                          .flex_row()
@@ -474,21 +356,7 @@ index 45a14fa1a0..3c51053961 100644
                                                          .flex_1()
                                                          .children(self.render_dock(
                                                              DockPosition::Left,
-                                                             &self.left_dock,
-                                                             window,
-                                                             cx,
-                                                         ))
-                                                         .child(
-                                                             div()
-                                                                 .flex()
-@@ -8596,25 +8686,30 @@ impl Render for Workspace {
-                                                                     h_flex()
-                                                                         .flex_1()
-                                                                         .when_some(
-                                                                             paddings.0,
-                                                                             |this, p| {
-                                                                                 this.child(
-                                                                                     p.border_r_1(),
+@@ -8632,11 +8722,16 @@ impl Render for Workspace {
                                                                                  )
                                                                              },
                                                                          )
@@ -510,21 +378,7 @@ index 45a14fa1a0..3c51053961 100644
                                                                          ))
                                                                          .when_some(
                                                                              paddings.1,
-                                                                             |this, p| {
-                                                                                 this.child(
-                                                                                     p.border_l_1(),
-                                                                                 )
-                                                                             },
-                                                                         ),
-                                                                 ),
-@@ -8629,60 +8724,68 @@ impl Render for Workspace {
-                                         )
-                                         .children(self.render_dock(
-                                             DockPosition::Right,
-                                             &self.right_dock,
-                                             window,
-                                             cx,
-                                         )),
+@@ -8665,6 +8760,7 @@ impl Render for Workspace {
                                      BottomDockLayout::RightAligned => div()
                                          .flex()
                                          .flex_row()
@@ -532,11 +386,7 @@ index 45a14fa1a0..3c51053961 100644
                                          .h_full()
                                          .children(self.render_dock(
                                              DockPosition::Left,
-                                             &self.left_dock,
-                                             window,
-                                             cx,
-                                         ))
-                                         .child(
+@@ -8676,12 +8772,14 @@ impl Render for Workspace {
                                              div()
                                                  .flex()
                                                  .flex_col()
@@ -551,18 +401,7 @@ index 45a14fa1a0..3c51053961 100644
                                                          .flex_1()
                                                          .child(
                                                              div()
-                                                                 .flex()
-                                                                 .flex_col()
-                                                                 .flex_1()
-                                                                 .overflow_hidden()
-                                                                 .child(
-                                                                     h_flex()
-                                                                         .flex_1()
-                                                                         .when_some(
-                                                                             paddings.0,
-                                                                             |this, p| {
-                                                                                 this.child(
-                                                                                     p.border_r_1(),
+@@ -8700,11 +8798,16 @@ impl Render for Workspace {
                                                                                  )
                                                                              },
                                                                          )
@@ -584,21 +423,7 @@ index 45a14fa1a0..3c51053961 100644
                                                                          ))
                                                                          .when_some(
                                                                              paddings.1,
-                                                                             |this, p| {
-                                                                                 this.child(
-                                                                                     p.border_l_1(),
-                                                                                 )
-                                                                             },
-                                                                         ),
-                                                                 ),
-@@ -8697,64 +8800,71 @@ impl Render for Workspace {
-                                                 .child(div().w_full().children(self.render_dock(
-                                                     DockPosition::Bottom,
-                                                     &self.bottom_dock,
-                                                     window,
-                                                     cx,
-                                                 ))),
-                                         ),
+@@ -8733,6 +8836,7 @@ impl Render for Workspace {
                                      BottomDockLayout::Contained => div()
                                          .flex()
                                          .flex_row()
@@ -606,11 +431,7 @@ index 45a14fa1a0..3c51053961 100644
                                          .h_full()
                                          .children(self.render_dock(
                                              DockPosition::Left,
-                                             &self.left_dock,
-                                             window,
-                                             cx,
-                                         ))
-                                         .child(
+@@ -8744,6 +8848,7 @@ impl Render for Workspace {
                                              div()
                                                  .flex()
                                                  .flex_col()
@@ -618,8 +439,7 @@ index 45a14fa1a0..3c51053961 100644
                                                  .flex_1()
                                                  .overflow_hidden()
                                                  .child(
-                                                     h_flex()
-                                                         .flex_1()
+@@ -8752,11 +8857,15 @@ impl Render for Workspace {
                                                          .when_some(paddings.0, |this, p| {
                                                              this.child(p.border_r_1())
                                                          })
@@ -640,19 +460,7 @@ index 45a14fa1a0..3c51053961 100644
                                                          ))
                                                          .when_some(paddings.1, |this, p| {
                                                              this.child(p.border_l_1())
-                                                         }),
-                                                 )
-                                                 .children(self.render_dock(
-                                                     DockPosition::Bottom,
-                                                     &self.bottom_dock,
-                                                     window,
-                                                     cx,
-                                                 )),
-                                         )
-                                         .children(self.render_dock(
-                                             DockPosition::Right,
-                                             &self.right_dock,
-                                             window,
+@@ -8776,7 +8885,8 @@ impl Render for Workspace {
                                              cx,
                                          )),
                                  }
@@ -662,21 +470,7 @@ index 45a14fa1a0..3c51053961 100644
                              .children(self.zoomed.as_ref().and_then(|view| {
                                  let zoomed_view = view.upgrade()?;
                                  let div = div()
-                                     .occlude()
-                                     .absolute()
-                                     .overflow_hidden()
-                                     .border_color(colors.border)
-                                     .bg(colors.background)
-                                     .child(zoomed_view)
-                                     .inset_0()
-@@ -8767,21 +8877,25 @@ impl Render for Workspace {
-                                 Some(match self.zoomed_position {
-                                     Some(DockPosition::Left) => div.right_2().border_r_1(),
-                                     Some(DockPosition::Right) => div.left_2().border_l_1(),
-                                     Some(DockPosition::Bottom) => div.top_2().border_t_1(),
-                                     None => div.top_2().bottom_2().left_2().right_2().border_1(),
-                                 })
-                             }))
+@@ -8803,7 +8913,11 @@ impl Render for Workspace {
                              .children(self.render_notifications(window, cx)),
                      )
                      .when(self.status_bar_visible(cx), |parent| {
@@ -689,10 +483,3 @@ index 45a14fa1a0..3c51053961 100644
                      })
                      .child(self.toast_layer.clone()),
              )
-     }
- }
- 
- impl WorkspaceStore {
-     pub fn new(client: Arc<Client>, cx: &mut Context<Self>) -> Self {
-         Self {
-             workspaces: Default::default(),
