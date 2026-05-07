@@ -33,6 +33,7 @@ PATCHES=(
   title-bar.patch
   windows-build-docs.patch
   windows-vs-devshell.patch
+  project-panel-style.patch
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

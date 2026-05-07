@@ -26,6 +26,7 @@ EXPECTED_PATCHES=(
   title-bar.patch
   windows-build-docs.patch
   windows-vs-devshell.patch
+  project-panel-style.patch
 )
 
 if [[ -t 1 ]]; then

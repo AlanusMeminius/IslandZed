@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IslandZed <islandzed@local>
+Date: Thu, 7 May 2026 00:00:00 +0000
+Subject: [PATCH 8/8] project-panel-style
+
+
+diff --git a/crates/project_panel/src/project_panel.rs b/crates/project_panel/src/project_panel.rs
+index 1ae5f42484..f53522d707 100644
+--- a/crates/project_panel/src/project_panel.rs
++++ b/crates/project_panel/src/project_panel.rs
+@@ -5407,22 +5407,34 @@ impl ProjectPanel {
+             .relative()
+             .group(GROUP_NAME)
+             .cursor_pointer()
+-            .rounded_none()
+-            .bg(bg_color)
+-            .border_1()
+-            .border_r_2()
+-            .border_color(border_color)
+-            .hover(|style| style.bg(bg_hover_color).border_color(border_hover_color))
++            .pl(px(8.))
++            .child(
++                div()
++                    .absolute()
++                    .top_0()
++                    .bottom_0()
++                    .left(px(4.))
++                    .right(px(4.))
++                    .rounded_md()
++                    .bg(bg_color)
++                    .border_1()
++                    .border_color(border_color)
++                    .group_hover(GROUP_NAME, |style| {
++                        style.bg(bg_hover_color).border_color(border_hover_color)
++                    })
++                    .when(
++                        !is_sticky
++                            && is_highlighted
++                            && folded_directory_drag_target.is_none(),
++                        |this| {
++                            this.border_color(transparent_white())
++                                .bg(item_colors.drag_over)
++                        },
++                    ),
++            )
+             .when(is_sticky, |this| this.block_mouse_except_scroll())
+             .when(!is_sticky, |this| {
+-                this.when(
+-                    is_highlighted && folded_directory_drag_target.is_none(),
+-                    |this| {
+-                        this.border_color(transparent_white())
+-                            .bg(item_colors.drag_over)
+-                    },
+-                )
+-                .when(settings.drag_and_drop, |this| {
++                this.when(settings.drag_and_drop, |this| {
+                     this.on_drag_move::<ExternalPaths>(cx.listener(
+                         move |this, event: &DragMoveEvent<ExternalPaths>, _, cx| {
+                             let is_current_target =
+@@ -6702,6 +6714,7 @@ impl Render for ProjectPanel {
+                 .track_focus(&self.focus_handle(cx))
+                 .child(
+                     v_flex()
++                        .pt(px(8.))
+                         .child(
+                             uniform_list("entries", item_count, {
+                                 cx.processor(|this, range: Range<usize>, window, cx| {
