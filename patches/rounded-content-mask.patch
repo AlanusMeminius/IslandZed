@@ -2,24 +2,7 @@ diff --git a/crates/editor/src/editor.rs b/crates/editor/src/editor.rs
 index 9b9330d831..cae2cac0a0 100644
 --- a/crates/editor/src/editor.rs
 +++ b/crates/editor/src/editor.rs
-@@ -852,16 +852,6 @@ pub trait Addon: 'static {
-         None
-     }
- 
--    fn extend_buffer_header_context_menu(
--        &self,
--        menu: ui::ContextMenu,
--        _: &language::BufferSnapshot,
--        _: &mut Window,
--        _: &mut App,
--    ) -> ui::ContextMenu {
--        menu
--    }
--
-     fn override_status_for_buffer_id(&self, _: BufferId, _: &App) -> Option<FileStatus> {
-         None
-     }
-@@ -10268,9 +10258,7 @@ impl Editor {
+@@ -10268,9 +10268,7 @@ impl Editor {
          origin.x -= BORDER_WIDTH;
  
          window.with_content_mask(
@@ -30,73 +13,6 @@ index 9b9330d831..cae2cac0a0 100644
              |window| {
                  window.defer_draw(element, origin, 1, Some(window.content_mask()));
              },
-@@ -18481,8 +18469,6 @@ impl Editor {
-                             return Navigated::No;
-                         };
-                         let pane = workspace.read(cx).active_pane().clone();
--                        let offset = editor.cursor_top_offset(cx);
--
-                         window.defer(cx, move |window, cx| {
-                             let (target_editor, target_pane): (Entity<Self>, Entity<Pane>) =
-                                 workspace.update(cx, |workspace, cx| {
-@@ -18547,7 +18533,8 @@ impl Editor {
- 
-                                 target_editor.change_selections(
-                                     SelectionEffects::scroll(Autoscroll::for_go_to_definition(
--                                        offset, cx,
-+                                        target_editor.cursor_top_offset(cx),
-+                                        cx,
-                                     ))
-                                     .nav_history(true),
-                                     window,
-@@ -23132,8 +23119,8 @@ impl Editor {
-         let snapshot = self.snapshot(window, cx);
-         let mut used_highlight_orders = HashMap::default();
-         self.highlighted_rows
--            .values()
--            .flat_map(|highlighted_rows| highlighted_rows.iter())
-+            .iter()
-+            .flat_map(|(_, highlighted_rows)| highlighted_rows.iter())
-             .fold(
-                 BTreeMap::<DisplayRow, LineHighlight>::new(),
-                 |mut unique_rows, highlight| {
-@@ -24342,7 +24329,7 @@ impl Editor {
-                             }
-                             let autoscroll = match scroll_offset {
-                                 Some(scroll_offset) => {
--                                    Autoscroll::top_relative(scroll_offset as ScrollOffset)
-+                                    Autoscroll::top_relative(scroll_offset as usize)
-                                 }
-                                 None => Autoscroll::newest(),
-                             };
-@@ -25417,27 +25404,6 @@ impl Editor {
-             self.refresh_runnables(None, window, cx);
-         }
-     }
--
--    /// Returns the current cursor's vertical offset, in display rows, from the
--    /// top of the visible viewport.
--    /// Returns `None` if the cursor is not currently on screen.
--    pub fn cursor_top_offset(&self, cx: &mut Context<Self>) -> Option<ScrollOffset> {
--        let visible = self.visible_line_count()?;
--        let display_map = self.display_map.update(cx, |map, cx| map.snapshot(cx));
--        let scroll_top = self.scroll_manager.scroll_position(&display_map, cx).y;
--        let cursor_display_row = self
--            .selections
--            .newest::<Point>(&display_map)
--            .head()
--            .to_display_point(&display_map)
--            .row()
--            .as_f64();
--
--        match cursor_display_row - scroll_top {
--            offset if offset < 0.0 || offset >= visible => None,
--            offset => Some(offset),
--        }
--    }
- }
- 
- fn edit_for_markdown_paste<'a>(
 diff --git a/crates/editor/src/element.rs b/crates/editor/src/element.rs
 index c872500a46..23d90c6e8a 100644
 --- a/crates/editor/src/element.rs
@@ -610,16 +526,16 @@ index 4dc2d334e1..02582a0e45 100644
    float4 clip_distance;
  };
  
-@@ -616,7 +623,7 @@ struct MonochromeSpriteFragmentInput {
+@@ -616,7 +623,8 @@ struct MonochromeSpriteFragmentInput {
    float4 position [[position]];
    float2 tile_position;
    float4 color [[flat]];
--  float4 clip_distance;
 +  uint sprite_id [[flat]];
+   float4 clip_distance;
  };
  
  vertex MonochromeSpriteVertexOutput monochrome_sprite_vertex(
-@@ -639,6 +646,7 @@ vertex MonochromeSpriteVertexOutput monochrome_sprite_vertex(
+@@ -639,6 +647,7 @@ vertex MonochromeSpriteVertexOutput monochrome_sprite_vertex(
        device_position,
        tile_position,
        color,
@@ -627,7 +543,7 @@ index 4dc2d334e1..02582a0e45 100644
        {clip_distance.x, clip_distance.y, clip_distance.z, clip_distance.w}};
  }
  
-@@ -656,6 +664,9 @@ fragment float4 monochrome_sprite_fragment(
+@@ -656,6 +665,9 @@ fragment float4 monochrome_sprite_fragment(
        atlas_texture.sample(atlas_texture_sampler, input.tile_position);
    float4 color = input.color;
    color.a *= sample.a;
@@ -637,7 +553,7 @@ index 4dc2d334e1..02582a0e45 100644
    return color;
  }
  
-@@ -714,7 +725,8 @@ fragment float4 polychrome_sprite_fragment(
+@@ -714,7 +726,8 @@ fragment float4 polychrome_sprite_fragment(
      color.g = grayscale;
      color.b = grayscale;
    }
@@ -647,7 +563,7 @@ index 4dc2d334e1..02582a0e45 100644
    return color;
  }
  
-@@ -1076,6 +1088,20 @@ float quad_sdf_impl(float2 corner_center_to_point, float corner_radius) {
+@@ -1076,6 +1089,20 @@ float quad_sdf_impl(float2 corner_center_to_point, float corner_radius) {
      }
  }
  
