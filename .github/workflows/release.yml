@@ -26,13 +26,8 @@ jobs:
           submodules: recursive
 
       - name: Apply patches to zed submodule
-        working-directory: source
-        run: |
-          shopt -s nullglob
-          for p in ../patches/*.patch; do
-            echo "Applying $p"
-            git apply "$p"
-          done
+        shell: bash
+        run: bash scripts/apply-patches.sh
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -77,15 +72,10 @@ jobs:
           submodules: recursive
 
       - name: Apply patches to zed submodule
-        working-directory: source
-        shell: pwsh
+        shell: bash
         run: |
-          git -c core.autocrlf=false reset --hard HEAD
-          Get-ChildItem ../patches/*.patch | ForEach-Object {
-            Write-Host "Applying $($_.FullName)"
-            git apply $_.FullName
-            if ($LASTEXITCODE -ne 0) { throw "Failed to apply $($_.Name)" }
-          }
+          bash scripts/apply-patches.sh reset
+          bash scripts/apply-patches.sh
 
       - name: Bundle Zed (x86_64)
         working-directory: source
