@@ -411,31 +411,7 @@ index dc387c67f3..0d6fe2df50 100644
      }
  
      /// Provide elements in the called function with a new namespace in which their identifiers must be unique.
-@@ -3592,7 +3657,6 @@ impl Window {
-         );
-         let integer_origin = quantized_origin.map(|c| ScaledPixels(c.trunc()));
-         let subpixel_rendering = self.should_use_subpixel_rendering(font_id, font_size);
--        let dilation = self.text_system().glyph_dilation_for_color(color);
-         let params = RenderGlyphParams {
-             font_id,
-             glyph_id,
-@@ -3601,7 +3665,6 @@ impl Window {
-             scale_factor,
-             is_emoji: false,
-             subpixel_rendering,
--            dilation,
-         };
- 
-         let raster_bounds = self.text_system().raster_bounds(&params)?;
-@@ -3691,7 +3754,6 @@ impl Window {
-             scale_factor,
-             is_emoji: true,
-             subpixel_rendering: false,
--            dilation: 0,
-         };
- 
-         let raster_bounds = self.text_system().raster_bounds(&params)?;
-@@ -5921,3 +5983,111 @@ pub fn outline(
+@@ -5921,3 +5986,111 @@ pub fn outline(
          border_style,
      }
  }
