@@ -1,3 +1,9 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IslandZed <islandzed@local>
+Date: Thu, 7 May 2026 00:00:00 +0000
+Subject: [PATCH 4/7] tab-style
+
+
 diff --git a/crates/ui/src/components/tab.rs b/crates/ui/src/components/tab.rs
 index e6823f46b7..98e076c64b 100644
 --- a/crates/ui/src/components/tab.rs

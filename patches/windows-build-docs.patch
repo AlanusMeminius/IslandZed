@@ -1,3 +1,9 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IslandZed <islandzed@local>
+Date: Thu, 7 May 2026 00:00:00 +0000
+Subject: [PATCH 6/7] windows-build-docs
+
+
 diff --git a/.rules b/.rules
 index 4b4eb08c36..88a4678f0a 100644
 --- a/.rules

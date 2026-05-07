@@ -1,3 +1,9 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IslandZed <islandzed@local>
+Date: Thu, 7 May 2026 00:00:00 +0000
+Subject: [PATCH 7/7] windows-vs-devshell
+
+
 diff --git a/script/bundle-windows.ps1 b/script/bundle-windows.ps1
 index 53527e1b8f..acf5661875 100644
 --- a/script/bundle-windows.ps1

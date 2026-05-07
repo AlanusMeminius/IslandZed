@@ -1,3 +1,9 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IslandZed <islandzed@local>
+Date: Thu, 7 May 2026 00:00:00 +0000
+Subject: [PATCH 5/7] title-bar
+
+
 diff --git a/crates/title_bar/src/title_bar.rs b/crates/title_bar/src/title_bar.rs
 index 8e19421899..a67772697d 100644
 --- a/crates/title_bar/src/title_bar.rs

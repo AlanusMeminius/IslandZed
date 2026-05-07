@@ -1,3 +1,9 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IslandZed <islandzed@local>
+Date: Thu, 7 May 2026 00:00:00 +0000
+Subject: [PATCH 2/7] floating-island
+
+
 diff --git a/crates/workspace/src/dock.rs b/crates/workspace/src/dock.rs
 index 1983b2921f..cc0c699ce8 100644
 --- a/crates/workspace/src/dock.rs

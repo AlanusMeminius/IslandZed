@@ -1,5 +1,11 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IslandZed <islandzed@local>
+Date: Thu, 7 May 2026 00:00:00 +0000
+Subject: [PATCH 1/7] rounded-content-mask
+
+
 diff --git a/crates/editor/src/editor.rs b/crates/editor/src/editor.rs
-index 9b9330d831..cae2cac0a0 100644
+index 9b9330d831..3c38a90b0e 100644
 --- a/crates/editor/src/editor.rs
 +++ b/crates/editor/src/editor.rs
 @@ -10268,9 +10268,7 @@ impl Editor {
@@ -191,7 +197,7 @@ index 05bc083d1d..5ed3c774d2 100644
          }
      }
 diff --git a/crates/gpui/src/window.rs b/crates/gpui/src/window.rs
-index dc387c67f3..0d6fe2df50 100644
+index dc387c67f3..69b4342286 100644
 --- a/crates/gpui/src/window.rs
 +++ b/crates/gpui/src/window.rs
 @@ -1646,14 +1646,53 @@ pub struct DispatchEventResult {
@@ -440,7 +446,7 @@ index dc387c67f3..0d6fe2df50 100644
 +    }
 +}
 diff --git a/crates/gpui_macos/src/shaders.metal b/crates/gpui_macos/src/shaders.metal
-index 4dc2d334e1..02582a0e45 100644
+index 4dc2d334e1..15d98e1656 100644
 --- a/crates/gpui_macos/src/shaders.metal
 +++ b/crates/gpui_macos/src/shaders.metal
 @@ -28,6 +28,7 @@ float pick_corner_radius(float2 center_to_point, Corners_ScaledPixels corner_rad
@@ -526,7 +532,7 @@ index 4dc2d334e1..02582a0e45 100644
    float4 clip_distance;
  };
  
-@@ -616,7 +623,8 @@ struct MonochromeSpriteFragmentInput {
+@@ -616,6 +623,7 @@ struct MonochromeSpriteFragmentInput {
    float4 position [[position]];
    float2 tile_position;
    float4 color [[flat]];
@@ -534,7 +540,6 @@ index 4dc2d334e1..02582a0e45 100644
    float4 clip_distance;
  };
  
- vertex MonochromeSpriteVertexOutput monochrome_sprite_vertex(
 @@ -639,6 +647,7 @@ vertex MonochromeSpriteVertexOutput monochrome_sprite_vertex(
        device_position,
        tile_position,
